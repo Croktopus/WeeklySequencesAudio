@@ -1,0 +1,26 @@
+# Built artifacts
+*.iml
+.gradle
+/build
+/app/build
+/captures
+.externalNativeBuild
+.cxx
+
+# IDE
+.idea/
+
+# Local config
+local.properties
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Signing
+*.jks
+*.keystore
+
+# Generated
+*.apk
+*.aab
