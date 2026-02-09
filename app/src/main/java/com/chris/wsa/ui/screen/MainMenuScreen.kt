@@ -17,7 +17,7 @@ import java.util.*
 fun MainMenuScreen(
     playlists: List<SavedPlaylist>,
     onCreateNew: () -> Unit,
-    onPlayPlaylist: (SavedPlaylist) -> Unit,
+    onOpenPlaylist: (SavedPlaylist) -> Unit,
     onQuickAddLatest: () -> Unit,
     onDeletePlaylist: (SavedPlaylist) -> Unit
 ) {
@@ -101,7 +101,7 @@ fun MainMenuScreen(
             items(playlists) { playlist ->
                 PlaylistCard(
                     playlist = playlist,
-                    onPlay = { onPlayPlaylist(playlist) },
+                    onOpen = { onOpenPlaylist(playlist) },
                     onDelete = { showDeleteDialog = playlist }
                 )
             }
@@ -136,13 +136,13 @@ fun MainMenuScreen(
 @Composable
 private fun PlaylistCard(
     playlist: SavedPlaylist,
-    onPlay: () -> Unit,
+    onOpen: () -> Unit,
     onDelete: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onPlay() }
+            .clickable { onOpen() }
     ) {
         Row(
             modifier = Modifier
@@ -163,7 +163,7 @@ private fun PlaylistCard(
                     color = MaterialTheme.colorScheme.secondary
                 )
                 Text(
-                    text = formatDate(playlist.createdAt),
+                    text = "Posted ${formatDate(playlist.postedAt ?: playlist.createdAt)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.secondary
                 )

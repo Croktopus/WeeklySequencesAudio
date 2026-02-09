@@ -72,11 +72,11 @@ fun PlayerControls(
 
         TextButton(
             onClick = {
-                val newPos = (currentPosition - 10000).coerceAtLeast(0)
+                val newPos = (currentPosition - 15000).coerceAtLeast(0)
                 onSeek(newPos)
             }
         ) {
-            Text("« 10s", style = MaterialTheme.typography.titleMedium)
+            Text("« 15s", style = MaterialTheme.typography.titleMedium)
         }
 
         FilledIconButton(
@@ -100,11 +100,11 @@ fun PlayerControls(
 
         TextButton(
             onClick = {
-                val newPos = (currentPosition + 30000).coerceAtMost(duration)
+                val newPos = (currentPosition + 15000).coerceAtMost(duration)
                 onSeek(newPos)
             }
         ) {
-            Text("30s »", style = MaterialTheme.typography.titleMedium)
+            Text("15s »", style = MaterialTheme.typography.titleMedium)
         }
 
         IconButton(

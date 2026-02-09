@@ -12,5 +12,7 @@ data class SavedPlaylist(
     val id: String,
     val name: String,
     val items: List<PlaylistItem>,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val eventUrl: String? = null,
+    val postedAt: Long? = null
 )

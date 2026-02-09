@@ -98,4 +98,15 @@ class PlayerViewModel : ViewModel() {
             }
         }
     }
+
+    fun startPlaylist(items: List<PlaylistItem>, startIndex: Int = 0) {
+        playlistManager?.let { pm ->
+            pm.clear()
+            items.forEach { pm.addItem(it) }
+            pm.selectItem(startIndex)
+            pm.getCurrentItem()?.let { item ->
+                playbackService?.loadAndPlayTrack(item, resumePosition = true)
+            }
+        }
+    }
 }

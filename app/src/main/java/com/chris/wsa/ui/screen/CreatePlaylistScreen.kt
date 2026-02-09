@@ -14,11 +14,14 @@ import com.chris.wsa.audio.PlaylistBuilder
 import com.chris.wsa.audio.WeeklyPostParser
 import com.chris.wsa.data.PlaylistItem
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 
 @Composable
 fun CreatePlaylistScreen(
     initialUrl: String?,
-    onPlaylistCreated: (String, List<PlaylistItem>) -> Unit,
+    onPlaylistCreated: (String, List<PlaylistItem>, String?, Long?) -> Unit,
     onCancel: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
@@ -27,6 +30,8 @@ fun CreatePlaylistScreen(
     var tempPlaylist by remember { mutableStateOf(listOf<PlaylistItem>()) }
     var isLoading by remember { mutableStateOf(false) }
     var statusMessage by remember { mutableStateOf("") }
+    var parsedEventUrl by remember { mutableStateOf<String?>(null) }
+    var parsedEventPostedAt by remember { mutableStateOf<Long?>(null) }
 
     val resolver = remember { AudioResolver() }
     val playlistBuilder = remember { PlaylistBuilder() }
@@ -131,6 +136,14 @@ fun CreatePlaylistScreen(
                         }
 
                         statusMessage = "Found ${parsedEvent.postLinks.size} posts, fetching audio..."
+                        parsedEventUrl = urlInput
+                        parsedEventPostedAt = parsedEvent.postedAt?.let { iso ->
+                            try {
+                                val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+                                format.timeZone = TimeZone.getTimeZone("UTC")
+                                format.parse(iso)?.time
+                            } catch (_: Exception) { null }
+                        }
 
                         val buildResult = playlistBuilder.buildFromPostUrls(parsedEvent.postLinks)
                         tempPlaylist = tempPlaylist + buildResult.items
@@ -173,7 +186,7 @@ fun CreatePlaylistScreen(
                         if (playlistName.isBlank()) {
                             statusMessage = "Please enter a playlist name"
                         } else {
-                            onPlaylistCreated(playlistName, tempPlaylist)
+                            onPlaylistCreated(playlistName, tempPlaylist, parsedEventUrl, parsedEventPostedAt)
                         }
                     }
                 ) {

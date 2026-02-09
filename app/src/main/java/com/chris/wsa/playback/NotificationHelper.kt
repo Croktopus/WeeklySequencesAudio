@@ -9,6 +9,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.media3.exoplayer.ExoPlayer
 import com.chris.wsa.MainActivity
+import com.chris.wsa.R
 
 class NotificationHelper(private val service: PlaybackService) {
 
@@ -108,26 +109,55 @@ class NotificationHelper(private val service: PlaybackService) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        // Rewind 15s action
+        val rewindIntent = PendingIntent.getService(
+            service, 4,
+            Intent(service, PlaybackService::class.java).apply {
+                action = "REWIND"
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Forward 15s action
+        val forwardIntent = PendingIntent.getService(
+            service, 5,
+            Intent(service, PlaybackService::class.java).apply {
+                action = "FORWARD"
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Actions: 0=Previous, 1=Rewind, 2=Play/Pause, 3=Forward, 4=Next
         val builder = NotificationCompat.Builder(service, CHANNEL_ID)
             .setContentTitle(currentTitle)
             .setContentText(currentArtist)
-            .setSmallIcon(android.R.drawable.ic_media_play)
+            .setSmallIcon(R.drawable.ic_notif_play)
             .setContentIntent(contentIntent)
             .setOnlyAlertOnce(true)
             .setOngoing(isPlaying)
             .setDeleteIntent(createStopIntent())
             .addAction(
-                android.R.drawable.ic_media_previous,
+                R.drawable.ic_notif_skip_previous,
                 "Previous",
                 previousIntent
             )
             .addAction(
-                if (isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play,
+                R.drawable.ic_replay,
+                "Rewind 15s",
+                rewindIntent
+            )
+            .addAction(
+                if (isPlaying) R.drawable.ic_notif_pause else R.drawable.ic_notif_play,
                 if (isPlaying) "Pause" else "Play",
                 playPauseIntent
             )
             .addAction(
-                android.R.drawable.ic_media_next,
+                R.drawable.ic_forward,
+                "Forward 15s",
+                forwardIntent
+            )
+            .addAction(
+                R.drawable.ic_notif_skip_next,
                 "Next",
                 nextIntent
             )
@@ -136,7 +166,7 @@ class NotificationHelper(private val service: PlaybackService) {
 
         builder.setStyle(
             androidx.media.app.NotificationCompat.MediaStyle()
-                .setShowActionsInCompactView(0, 1, 2)
+                .setShowActionsInCompactView(2)
         )
 
         return builder.build()

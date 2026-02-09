@@ -213,6 +213,14 @@ class PlaybackService : MediaSessionService() {
                     playlistManager.getCurrentItem()?.let { loadAndPlayTrack(it, resumePosition = true) }
                 }
             }
+            "REWIND" -> {
+                val newPos = (player.currentPosition - 15000).coerceAtLeast(0)
+                player.seekTo(newPos)
+            }
+            "FORWARD" -> {
+                val newPos = (player.currentPosition + 15000).coerceAtMost(player.duration)
+                player.seekTo(newPos)
+            }
         }
         return START_STICKY
     }

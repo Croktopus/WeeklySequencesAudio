@@ -1,13 +1,15 @@
 package com.chris.wsa.ui.screen
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
@@ -24,7 +26,6 @@ fun PlayerScreen(
     playlistManager: PlaylistManager,
     playbackService: PlaybackService,
     playerViewModel: PlayerViewModel,
-    playlistName: String?,
     onBack: () -> Unit
 ) {
     val playlist by playlistManager.playlist.collectAsState()
@@ -46,11 +47,6 @@ fun PlayerScreen(
         }
         player.addListener(listener)
 
-        // Auto-play first item if nothing is loaded
-        if (playlist.isNotEmpty() && player.mediaItemCount == 0) {
-            playbackService.loadAndPlayTrack(playlist[0])
-        }
-
         onDispose {
             player.removeListener(listener)
         }
@@ -69,20 +65,10 @@ fun PlayerScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = playlistName ?: "Now Playing",
-                    style = MaterialTheme.typography.headlineMedium
-                )
-                if (playlistName != null && currentItem != null) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "by ${currentItem.author}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.secondary
-                    )
-                }
-            }
+            Text(
+                text = "Now Playing",
+                style = MaterialTheme.typography.headlineMedium
+            )
             TextButton(onClick = onBack) {
                 Text("← Back")
             }
@@ -90,10 +76,118 @@ fun PlayerScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (currentItem != null) {
-            TrackInfoCard(item = currentItem)
+        val context = LocalContext.current
 
-            Spacer(modifier = Modifier.height(24.dp))
+        if (currentItem != null) {
+            TrackInfoCard(
+                item = currentItem,
+                onClick = {
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(currentItem.url)))
+                }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Previous / Next side-by-side
+            val hasPrev = currentIndex > 0
+            val hasNext = currentIndex < playlist.size - 1
+
+            if (hasPrev || hasNext) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (hasPrev) {
+                        val prevItem = playlist[currentIndex - 1]
+                        val prevPosition = remember(prevItem.mp3Url) {
+                            positionManager.getPosition(prevItem.mp3Url)
+                        }
+                        Card(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { playerViewModel.selectAndPlay(currentIndex - 1) },
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surface
+                            )
+                        ) {
+                            Column(modifier = Modifier.padding(10.dp)) {
+                                Text(
+                                    text = "Previous",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = prevItem.title,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    text = "by ${prevItem.author}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                if (prevPosition > 0) {
+                                    Text(
+                                        text = "Resume at ${formatTime(prevPosition)}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+
+                    if (hasNext) {
+                        val nextItem = playlist[currentIndex + 1]
+                        val nextPosition = remember(nextItem.mp3Url) {
+                            positionManager.getPosition(nextItem.mp3Url)
+                        }
+                        Card(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { playerViewModel.selectAndPlay(currentIndex + 1) },
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surface
+                            )
+                        ) {
+                            Column(modifier = Modifier.padding(10.dp)) {
+                                Text(
+                                    text = "Up Next",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = nextItem.title,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    text = "by ${nextItem.author}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                if (nextPosition > 0) {
+                                    Text(
+                                        text = "Resume at ${formatTime(nextPosition)}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
 
             PlayerControls(
                 currentPosition = uiState.currentPosition,
@@ -109,66 +203,6 @@ fun PlayerScreen(
                 onNext = { playerViewModel.next() },
                 onShowSpeedDialog = { showSpeedDialog = true }
             )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = "Up Next",
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                itemsIndexed(playlist) { index, item ->
-                    val savedPosition = remember(item.mp3Url) {
-                        positionManager.getPosition(item.mp3Url)
-                    }
-                    val hasProgress = savedPosition > 0
-
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                playerViewModel.selectAndPlay(index)
-                            },
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (index == currentIndex) {
-                                MaterialTheme.colorScheme.secondaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.surface
-                            }
-                        )
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp)
-                        ) {
-                            Text(
-                                text = "${index + 1}. ${item.title}",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "by ${item.author}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            if (hasProgress) {
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "Resume at ${formatTime(savedPosition)}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 

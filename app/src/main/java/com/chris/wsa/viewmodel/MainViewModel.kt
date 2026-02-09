@@ -13,11 +13,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 
 sealed class QuickAddState {
     object Idle : QuickAddState()
     data class Loading(val status: String) : QuickAddState()
-    data class Success(val message: String, val eventUrl: String) : QuickAddState()
+    data class Success(val playlistId: String) : QuickAddState()
     data class Error(val message: String) : QuickAddState()
 }
 
@@ -39,8 +42,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _playlists.value = playlistStorage.getAllPlaylists()
     }
 
-    fun savePlaylist(name: String, items: List<PlaylistItem>) {
-        playlistStorage.savePlaylist(name, items)
+    fun savePlaylist(name: String, items: List<PlaylistItem>, eventUrl: String? = null, postedAt: Long? = null) {
+        playlistStorage.savePlaylist(name, items, eventUrl, postedAt)
         refreshPlaylists()
     }
 
@@ -86,15 +89,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val buildResult = PlaylistBuilder().buildFromPostUrls(parsedEvent.postLinks)
 
             if (buildResult.items.isNotEmpty()) {
-                playlistStorage.savePlaylist(parsedEvent.shortTitle, buildResult.items)
+                val postedAtMillis = parsedEvent.postedAt?.let { parseIsoDate(it) }
+                val saved = playlistStorage.savePlaylist(parsedEvent.shortTitle, buildResult.items, eventUrl, postedAtMillis)
                 refreshPlaylists()
-                _quickAddState.value = QuickAddState.Success(
-                    message = "Added '${parsedEvent.shortTitle}' (${buildResult.items.size} posts)",
-                    eventUrl = eventUrl
-                )
+                _quickAddState.value = QuickAddState.Success(playlistId = saved.id)
             } else {
                 _quickAddState.value = QuickAddState.Error("No audio found for posts")
             }
+        }
+    }
+
+    private fun parseIsoDate(iso: String): Long? {
+        return try {
+            val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+            format.timeZone = TimeZone.getTimeZone("UTC")
+            format.parse(iso)?.time
+        } catch (_: Exception) {
+            null
         }
     }
 }

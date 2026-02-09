@@ -1,5 +1,6 @@
 package com.chris.wsa.ui.component
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -8,9 +9,11 @@ import androidx.compose.ui.unit.dp
 import com.chris.wsa.data.PlaylistItem
 
 @Composable
-fun TrackInfoCard(item: PlaylistItem) {
+fun TrackInfoCard(item: PlaylistItem, onClick: (() -> Unit)? = null) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer
         )

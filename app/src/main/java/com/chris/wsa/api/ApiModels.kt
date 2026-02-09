@@ -60,6 +60,7 @@ data class EventPost(
 
 data class EventPostResult(
     val title: String?,
+    val postedAt: String?,
     val user: EventUser?,
     val contents: EventContents?
 )

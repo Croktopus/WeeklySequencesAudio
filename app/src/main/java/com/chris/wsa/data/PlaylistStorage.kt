@@ -23,12 +23,14 @@ class PlaylistStorage(context: Context) {
         }
     }
 
-    fun savePlaylist(name: String, items: List<PlaylistItem>): SavedPlaylist {
+    fun savePlaylist(name: String, items: List<PlaylistItem>, eventUrl: String? = null, postedAt: Long? = null): SavedPlaylist {
         val playlists = getAllPlaylists().toMutableList()
         val playlist = SavedPlaylist(
             id = java.util.UUID.randomUUID().toString(),
             name = name,
-            items = items
+            items = items,
+            eventUrl = eventUrl,
+            postedAt = postedAt
         )
         playlists.add(playlist)
         saveAllPlaylists(playlists)

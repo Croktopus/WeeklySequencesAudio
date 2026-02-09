@@ -9,7 +9,8 @@ data class ParsedEvent(
     val title: String,
     val shortTitle: String,
     val author: String,
-    val postLinks: List<String>
+    val postLinks: List<String>,
+    val postedAt: String? = null
 )
 
 class WeeklyPostParser(
@@ -29,6 +30,7 @@ class WeeklyPostParser(
                   post(input: { selector: { _id: "$eventId" } }) {
                     result {
                       title
+                      postedAt
                       user {
                         displayName
                       }
@@ -79,7 +81,8 @@ class WeeklyPostParser(
                 title = title,
                 shortTitle = shortTitle,
                 author = author,
-                postLinks = postLinks
+                postLinks = postLinks,
+                postedAt = result?.postedAt
             )
 
         } catch (_: Exception) {
