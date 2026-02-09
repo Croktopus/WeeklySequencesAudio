@@ -12,6 +12,7 @@
 
 # Local config
 local.properties
+.claude/
 
 # OS files
 .DS_Store
