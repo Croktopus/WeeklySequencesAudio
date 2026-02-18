@@ -4,103 +4,86 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.chris.wsa.data.SavedPlaylist
+import com.chris.wsa.ui.util.calculateTotalDuration
+import com.chris.wsa.ui.util.formatDuration
 import java.text.SimpleDateFormat
 import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainMenuScreen(
-    playlists: List<SavedPlaylist>,
-    onCreateNew: () -> Unit,
+    allEvents: List<SavedPlaylist>,
     onOpenPlaylist: (SavedPlaylist) -> Unit,
     onQuickAddLatest: () -> Unit,
-    onDeletePlaylist: (SavedPlaylist) -> Unit
+    onDeletePlaylist: (SavedPlaylist) -> Unit,
+    onClearAllLsrg: () -> Unit,
+    onOpenDrawer: () -> Unit
 ) {
     var showDeleteDialog by remember { mutableStateOf<SavedPlaylist?>(null) }
+    var showClearAllDialog by remember { mutableStateOf(false) }
+    var showMenu by remember { mutableStateOf(false) }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.statusBars),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        item {
-            Column {
-                Text(
-                    text = "LSRG Audio",
-                    style = MaterialTheme.typography.headlineMedium
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "Your Playlists",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.secondary
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Button(
-                    onClick = onQuickAddLatest,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondary
-                    )
-                ) {
-                    Text("⚡ Quick Add Latest LSRG")
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Button(
-                    onClick = onCreateNew,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("➕ Create New Playlist")
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-        }
-
-        if (playlists.isEmpty()) {
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "No playlists yet",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Create your first playlist to get started!",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.secondary
-                        )
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { },
+                navigationIcon = {
+                    IconButton(onClick = onOpenDrawer) {
+                        Icon(Icons.Default.Menu, contentDescription = "Menu")
+                    }
+                },
+                actions = {
+                    Box {
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                        }
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Clear All LSRG") },
+                                onClick = {
+                                    showMenu = false
+                                    showClearAllDialog = true
+                                }
+                            )
+                        }
                     }
                 }
+            )
+        }
+    ) { topPadding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(topPadding),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            item {
+                Button(
+                    onClick = onQuickAddLatest,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Add Latest LSRG")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
             }
-        } else {
-            items(playlists) { playlist ->
-                PlaylistCard(
+
+            items(allEvents, key = { it.id }) { playlist ->
+                EventCard(
                     playlist = playlist,
+                    isLsrg = playlist.eventUrl != null,
                     onOpen = { onOpenPlaylist(playlist) },
                     onDelete = { showDeleteDialog = playlist }
                 )
@@ -131,11 +114,36 @@ fun MainMenuScreen(
             }
         )
     }
+
+    // Clear all LSRG confirmation dialog
+    if (showClearAllDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearAllDialog = false },
+            title = { Text("Clear All LSRG?") },
+            text = { Text("This will delete all saved LSRG playlists. Archive entries will reappear but without fetched audio.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onClearAllLsrg()
+                        showClearAllDialog = false
+                    }
+                ) {
+                    Text("Clear All")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearAllDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 }
 
 @Composable
-private fun PlaylistCard(
+private fun EventCard(
     playlist: SavedPlaylist,
+    isLsrg: Boolean,
     onOpen: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -157,20 +165,37 @@ private fun PlaylistCard(
                     style = MaterialTheme.typography.titleMedium
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "${playlist.items.size} posts",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.secondary
-                )
-                Text(
-                    text = "Posted ${formatDate(playlist.postedAt ?: playlist.createdAt)}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.secondary
-                )
+                Row {
+                    val infoText = if (playlist.items.isEmpty()) {
+                        "Not fetched"
+                    } else {
+                        val postWord = if (playlist.items.size == 1) "post" else "posts"
+                        val durationText = formatDuration(calculateTotalDuration(playlist.items))
+                        buildString {
+                            append("${playlist.items.size} $postWord")
+                            if (durationText.isNotEmpty()) append(" · $durationText")
+                        }
+                    }
+                    Text(
+                        text = infoText,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                    playlist.postedAt?.let { ts ->
+                        Text(
+                            text = "  •  ${formatDate(ts)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                    }
+                }
             }
 
-            IconButton(onClick = onDelete) {
-                Text("🗑", style = MaterialTheme.typography.titleMedium)
+            // Hide delete for LSRG playlists (both archive and Quick Add)
+            if (!isLsrg) {
+                IconButton(onClick = onDelete) {
+                    Text("\uD83D\uDDD1", style = MaterialTheme.typography.titleMedium)
+                }
             }
         }
     }

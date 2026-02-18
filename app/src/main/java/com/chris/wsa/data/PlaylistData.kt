@@ -4,9 +4,12 @@ data class PlaylistItem(
     val url: String,
     val title: String,
     val author: String,
-    val mp3Url: String,
-    val source: String
-)
+    val mp3Url: String? = null,
+    val source: String = "",
+    val durationMs: Long? = null
+) {
+    val hasAudio: Boolean get() = mp3Url != null
+}
 
 data class SavedPlaylist(
     val id: String,
