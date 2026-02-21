@@ -36,6 +36,11 @@ android {
     }
 }
 
+// Run the archive scraper before every build to pick up new LSRG events
+tasks.named("preBuild") {
+    dependsOn(":scraper:run")
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
