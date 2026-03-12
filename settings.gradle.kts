@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Weekly Sequences Audio"
 include(":app")
+include(":scraper")
