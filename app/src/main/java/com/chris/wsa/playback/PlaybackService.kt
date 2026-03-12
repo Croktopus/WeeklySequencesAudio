@@ -80,8 +80,8 @@ class PlaybackService : MediaSessionService() {
 
             override fun onPlaybackStateChanged(playbackState: Int) {
                 if (playbackState == Player.STATE_ENDED) {
-                    playlistManager.getCurrentItem()?.let {
-                        positionManager.clearPosition(it.mp3Url)
+                    playlistManager.getCurrentItem()?.mp3Url?.let {
+                        positionManager.clearPosition(it)
                     }
 
                     if (playlistManager.currentIndex.value < playlistManager.playlist.value.size - 1) {
@@ -226,6 +226,8 @@ class PlaybackService : MediaSessionService() {
     }
 
     fun loadAndPlayTrack(item: PlaylistItem, resumePosition: Boolean = true) {
+        val mp3Url = item.mp3Url ?: return
+
         if (player.mediaItemCount == 0) {
             startForegroundNotification()
         }
@@ -236,7 +238,7 @@ class PlaybackService : MediaSessionService() {
             .build()
 
         val mediaItem = MediaItem.Builder()
-            .setUri(item.mp3Url)
+            .setUri(mp3Url)
             .setMediaMetadata(metadata)
             .build()
 
@@ -244,7 +246,7 @@ class PlaybackService : MediaSessionService() {
         player.prepare()
 
         if (resumePosition) {
-            val savedPosition = positionManager.getPosition(item.mp3Url)
+            val savedPosition = positionManager.getPosition(mp3Url)
             if (savedPosition > 0) {
                 player.seekTo(savedPosition)
                 android.util.Log.d("PlaybackService", "Resuming from position: $savedPosition")
@@ -256,9 +258,10 @@ class PlaybackService : MediaSessionService() {
 
     private fun saveCurrentPosition() {
         playlistManager.getCurrentItem()?.let { item ->
+            val mp3Url = item.mp3Url ?: return@let
             val position = player.currentPosition
             if (position > 0 && position < player.duration - 5000) {
-                positionManager.savePosition(item.mp3Url, position)
+                positionManager.savePosition(mp3Url, position)
                 android.util.Log.d("PlaybackService", "Saved position: $position for ${item.title}")
             }
         }

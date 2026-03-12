@@ -124,8 +124,8 @@ fun CreatePlaylistScreen(
                         val parser = WeeklyPostParser()
                         val parsedEvent = parser.extractPostLinks(urlInput)
 
-                        if (parsedEvent == null || parsedEvent.postLinks.isEmpty()) {
-                            statusMessage = "No posts found in URL"
+                        if (parsedEvent == null || parsedEvent.links.isEmpty()) {
+                            statusMessage = "No links found in URL"
                             isLoading = false
                             return@launch
                         }
@@ -135,7 +135,7 @@ fun CreatePlaylistScreen(
                             playlistName = parsedEvent.shortTitle
                         }
 
-                        statusMessage = "Found ${parsedEvent.postLinks.size} posts, fetching audio..."
+                        statusMessage = "Found ${parsedEvent.links.size} links, fetching audio..."
                         parsedEventUrl = urlInput
                         parsedEventPostedAt = parsedEvent.postedAt?.let { iso ->
                             try {
@@ -145,10 +145,11 @@ fun CreatePlaylistScreen(
                             } catch (_: Exception) { null }
                         }
 
-                        val buildResult = playlistBuilder.buildFromPostUrls(parsedEvent.postLinks)
+                        val buildResult = playlistBuilder.buildFromLinks(parsedEvent.links)
                         tempPlaylist = tempPlaylist + buildResult.items
 
-                        statusMessage = "Added ${buildResult.items.size} of ${parsedEvent.postLinks.size} posts"
+                        val audioCount = buildResult.items.count { it.hasAudio }
+                        statusMessage = "Added ${buildResult.items.size} items ($audioCount with audio)"
                         urlInput = ""
                         isLoading = false
                     }
@@ -216,13 +217,15 @@ fun CreatePlaylistScreen(
                                 text = "${index + 1}. ${item.title}",
                                 style = MaterialTheme.typography.bodyMedium
                             )
+                            if (item.author.isNotBlank()) {
+                                Text(
+                                    text = "by ${item.author}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                             Text(
-                                text = "by ${item.author}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = item.source,
+                                text = if (item.hasAudio) item.source else "Read-only link",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.secondary
                             )

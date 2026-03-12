@@ -100,7 +100,7 @@ fun PlayerScreen(
                     if (hasPrev) {
                         val prevItem = playlist[currentIndex - 1]
                         val prevPosition = remember(prevItem.mp3Url) {
-                            positionManager.getPosition(prevItem.mp3Url)
+                            prevItem.mp3Url?.let { positionManager.getPosition(it) } ?: 0L
                         }
                         Card(
                             modifier = Modifier
@@ -144,7 +144,7 @@ fun PlayerScreen(
                     if (hasNext) {
                         val nextItem = playlist[currentIndex + 1]
                         val nextPosition = remember(nextItem.mp3Url) {
-                            positionManager.getPosition(nextItem.mp3Url)
+                            nextItem.mp3Url?.let { positionManager.getPosition(it) } ?: 0L
                         }
                         Card(
                             modifier = Modifier

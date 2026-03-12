@@ -37,6 +37,21 @@ class PlaylistStorage(context: Context) {
         return playlist
     }
 
+    fun savePlaylistWithId(id: String, name: String, items: List<PlaylistItem>, eventUrl: String? = null, postedAt: Long? = null): SavedPlaylist {
+        val playlists = getAllPlaylists().toMutableList()
+        playlists.removeAll { it.id == id }
+        val playlist = SavedPlaylist(
+            id = id,
+            name = name,
+            items = items,
+            eventUrl = eventUrl,
+            postedAt = postedAt
+        )
+        playlists.add(playlist)
+        saveAllPlaylists(playlists)
+        return playlist
+    }
+
     fun deletePlaylist(id: String) {
         val playlists = getAllPlaylists().toMutableList()
         playlists.removeAll { it.id == id }
