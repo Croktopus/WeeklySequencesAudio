@@ -21,11 +21,8 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Run archive scraper
-        run: ./gradlew :scraper:run
-
       - name: Build debug APK
-        run: ./gradlew assembleDebug -x :scraper:run
+        run: ./gradlew assembleDebug
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
